@@ -29,7 +29,7 @@ namespace ft {
         vector() : sz(0), cap(0), array(pointer()) {}
 
         vector(size_t n, const T &val = T()) : sz(0), cap(0), array(pointer()) {
-            resize(n, val);
+            assign(n, val);
         }
 
         template<typename Iterator>
@@ -51,8 +51,17 @@ namespace ft {
         }
 
         iterator end() {
-            return iterator(array + sz);
+            return const_iterator(array + sz);
         }
+
+		const_iterator cbegin() {
+			return const_iterator(array);
+		}
+
+		const_iterator cend() {
+			return const_iterator(array + sz);
+		}
+
 
         // unsafe method for my implementation
         void reserve(size_t new_capacity) {
@@ -96,8 +105,15 @@ namespace ft {
             }
         }
 
+
+		/// ASSIGN
+
+
         void assign(size_t n, const T &value) {
-            resize(n, value);
+			reserve(n);
+			sz = n;
+			for (size_t i = 0; i < sz; i++)
+				new(array + i) T(value);
         }
 
         template<typename Iterator>
@@ -105,10 +121,80 @@ namespace ft {
                      typename ft::enable_if<!ft::is_integral<Iterator>::value>::value* = NULL) {
             typename ft::iterator_traits<Iterator>::difference_type n =
                     ft::distance(first, last);
-            resize(n);
-            for (size_t i = 0; first != last; ++first, ++i)
+			reserve(n);
+			sz = n;
+            for (size_t i = 0; i < n; ++first, ++i)
                 new(array + i)  T(*first);
         }
+
+
+		/// INSERT
+
+
+		iterator insert(const iterator &pos, const T &value) {
+			return insert(pos, 1, value);
+		}
+
+		iterator insert(const iterator &pos, size_t n, const T &value) {
+			size_t new_cap = sz + n;
+			size_t cnt_from_head = pos - begin();
+			size_t cnt_from_head_tmp = cnt_from_head;
+
+			reserve(new_cap);
+			for (size_t i = 0; i < n; ++i) {
+				new(array + sz) T(array[cnt_from_head_tmp++]);
+				sz++;
+			}
+			cnt_from_head_tmp = cnt_from_head;
+			for (size_t i = 0; i < n; ++i) {
+				new(array + cnt_from_head_tmp++) T(value);
+			}
+			return iterator(array + cnt_from_head);
+		}
+
+		template<typename Iterator>
+		iterator insert(const iterator &pos, Iterator first, Iterator last,
+						typename ft::enable_if<!ft::is_integral<Iterator>::value>::value* = NULL) {
+			typename ft::iterator_traits<Iterator>::difference_type n =
+					ft::distance(first, last);
+			size_t new_cap = sz + static_cast<size_t>(n);
+			size_t cnt_from_head = pos - begin();
+			size_t cnt_from_head_tmp = cnt_from_head;
+
+			reserve(new_cap);
+			for (size_t i = 0; i < static_cast<size_t>(n); ++i) {
+				new(array + sz) T(array[cnt_from_head_tmp++]);
+				sz++;
+			}
+			cnt_from_head_tmp = cnt_from_head;
+			for (size_t i = 0; i < static_cast<size_t>(n); ++first, ++i) {
+				new(array + cnt_from_head_tmp++) T(*first);
+			}
+			return iterator(array + cnt_from_head);
+		}
+
+		/// ERASE
+
+//		iterator erase(const_iterator pos) {
+//			return erase(pos, pos + 1);
+//		}
+
+		iterator erase(const_iterator first, const_iterator last) {
+			typename const_iterator::difference_type n =
+					ft::distance(first, last);
+			size_t dist_to_first = first - begin();
+			size_t dist_to_last = last - begin();
+
+			if (dist_to_first + n + 1 > sz)
+				resize(dist_to_first);
+			else {
+				for (size_t i = 0; i < static_cast<size_t>(sz - n); ++i)
+					new(array + dist_to_first++) T(*(array + dist_to_last++));
+				sz -= n;
+			}
+			return iterator();
+		}
+
 
         size_t capacity() const {
             return cap;

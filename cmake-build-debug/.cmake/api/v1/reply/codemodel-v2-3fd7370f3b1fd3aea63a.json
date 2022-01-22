@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "21_containers::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-21_containers-Debug-b4d48e0d761b413dd526.json",
+					"jsonFile" : "target-21_containers-Debug-a3f77b262363d9c4b894.json",
 					"name" : "21_containers",
 					"projectIndex" : 0
 				}
@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/phili/Desktop/21_containers/cmake-build-debug",
-		"source" : "/home/phili/Desktop/21_containers"
+		"build" : "/Users/dchani/Desktop/21_containers/cmake-build-debug",
+		"source" : "/Users/dchani/Desktop/21_containers"
 	},
 	"version" : 
 	{
