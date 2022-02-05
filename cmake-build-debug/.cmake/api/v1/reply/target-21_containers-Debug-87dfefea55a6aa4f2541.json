@@ -35,10 +35,10 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -mmacosx-version-min=10.14"
+					"fragment" : "-g"
 				},
 				{
-					"fragment" : "-std=gnu++98"
+					"fragment" : "-std=gnu++11"
 				}
 			],
 			"language" : "CXX",
@@ -48,7 +48,7 @@
 				[
 					1
 				],
-				"standard" : "98"
+				"standard" : "11"
 			},
 			"sourceIndexes" : 
 			[

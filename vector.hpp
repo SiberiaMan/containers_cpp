@@ -7,6 +7,7 @@
 #include "iterator.hpp"
 #include "type_traits.hpp"
 #include "iterator_function.hpp"
+#include "utils.hpp"
 
 namespace ft {
     template<typename T>
@@ -18,8 +19,10 @@ namespace ft {
         typedef T&      reference;
         typedef const T* const_pointer;
         typedef const T& const_reference;
-        typedef ft::normal_iterator<pointer> iterator;
-        typedef ft::normal_iterator<const_pointer> const_iterator;
+        typedef ft::normal_iterator<pointer, vector> iterator;
+        typedef ft::normal_iterator<const_pointer, vector> const_iterator;
+        typedef ft::reverse_iterator<iterator>   reverse_iterator;
+        typedef ft::reverse_iterator<const_iterator> const_reverse_iterator;
 
     private:
         size_t sz;
@@ -28,6 +31,7 @@ namespace ft {
     public:
         vector() : sz(0), cap(0), array(pointer()) {}
 
+        explicit
         vector(size_t n, const T &val = T()) : sz(0), cap(0), array(pointer()) {
             assign(n, val);
         }
@@ -51,17 +55,68 @@ namespace ft {
         }
 
         iterator end() {
-            return const_iterator(array + sz);
+            return iterator(array + sz);
         }
 
-		const_iterator cbegin() {
+		const_iterator begin() const {
 			return const_iterator(array);
 		}
 
-		const_iterator cend() {
+		const_iterator end() const {
 			return const_iterator(array + sz);
 		}
 
+        reverse_iterator rbegin() {
+            return reverse_iterator(end());
+        }
+
+        reverse_iterator rend() {
+            return reverse_iterator(begin());
+        }
+
+        const_reverse_iterator rbegin() const {
+            return const_reverse_iterator(end());
+        }
+
+        const_reverse_iterator rend() const {
+            return const_reverse_iterator(begin());
+        }
+
+        reference at(size_t n) {
+            if (n >= sz)
+                throw std::out_of_range("invalid position");
+            return *(array + n);
+        }
+
+        const_reference at(size_t n) const {
+            if (n >= sz)
+                throw std::out_of_range("invalid position");
+            return *(array + n);
+        }
+
+        reference operator[](size_t n) {
+            return *(array + n);
+        }
+
+        const_reference operator[](size_t n) const {
+            return *(array + n);
+        }
+
+        reference front() {
+            return *array;
+        }
+
+        const_reference front() const {
+            return *array;
+        }
+
+        reference back() {
+            return *(array + sz - 1);
+        }
+
+        const_reference back() const {
+            return *(array + sz - 1);
+        }
 
         // unsafe method for my implementation
         void reserve(size_t new_capacity) {
@@ -74,6 +129,7 @@ namespace ft {
             for (size_t i = 0; i < sz; ++i)
                 (array + i)->~T();
             delete [] reinterpret_cast<char*>(array);
+            //std::cout << "REALLOC" << std::endl;
             array = new_ptr;
             cap = new_capacity;
         }
@@ -102,6 +158,7 @@ namespace ft {
         void pop_back() {
             if (sz) {
                 --sz;
+                (array + sz)->~T();
             }
         }
 
@@ -136,16 +193,17 @@ namespace ft {
 		}
 
 		iterator insert(const iterator &pos, size_t n, const T &value) {
-			size_t new_cap = sz + n;
+            size_t prev_sz = sz;
 			size_t cnt_from_head = pos - begin();
-			size_t cnt_from_head_tmp = cnt_from_head;
+            size_t cnt_from_head_tmp = cnt_from_head;
+            size_t cnt_from_tail = sz - cnt_from_head;
 
-			reserve(new_cap);
-			for (size_t i = 0; i < n; ++i) {
-				new(array + sz) T(array[cnt_from_head_tmp++]);
-				sz++;
-			}
-			cnt_from_head_tmp = cnt_from_head;
+            sz += n;
+            reserve(sz);
+
+            for (size_t i = 0; cnt_from_tail > 0; ++i, --cnt_from_tail) {
+                new(array + sz - i - 1) T(array[prev_sz - i - 1]);
+            }
 			for (size_t i = 0; i < n; ++i) {
 				new(array + cnt_from_head_tmp++) T(value);
 			}
@@ -157,44 +215,69 @@ namespace ft {
 						typename ft::enable_if<!ft::is_integral<Iterator>::value>::value* = NULL) {
 			typename ft::iterator_traits<Iterator>::difference_type n =
 					ft::distance(first, last);
-			size_t new_cap = sz + static_cast<size_t>(n);
+            size_t prev_sz = sz;
 			size_t cnt_from_head = pos - begin();
 			size_t cnt_from_head_tmp = cnt_from_head;
+            size_t cnt_from_tail = sz - cnt_from_head;
 
-			reserve(new_cap);
-			for (size_t i = 0; i < static_cast<size_t>(n); ++i) {
-				new(array + sz) T(array[cnt_from_head_tmp++]);
-				sz++;
+            sz += static_cast<size_t>(n);
+			reserve(sz);
+
+			for (size_t i = 0; cnt_from_tail > 0; ++i, --cnt_from_tail) {
+				new(array + sz - i - 1) T(array[prev_sz - i - 1]);
 			}
 			cnt_from_head_tmp = cnt_from_head;
-			for (size_t i = 0; i < static_cast<size_t>(n); ++first, ++i) {
-				new(array + cnt_from_head_tmp++) T(*first);
-			}
+            if (first.operator->() > (array + cnt_from_head)) {
+                for (size_t i = 0; i < static_cast<size_t>(n); ++first, ++i) {
+//                    std::cout << "========" << std::endl;
+//                    std::cout << (array + cnt_from_head_tmp) << std::endl;
+//                    std::cout << first.operator->() << std::endl;
+//                    std::cout << "========" << std::endl;
+                    new(array + cnt_from_head_tmp++) T(*first);
+                }
+            }
+            else {
+                first += (n - 1);
+                cnt_from_head_tmp += (n - 1);
+                for (size_t i = 0; i < static_cast<size_t>(n); --first, ++i) {
+//                    std::cout << "========" << std::endl;
+//                    std::cout << (array + cnt_from_head_tmp) << std::endl;
+//                    std::cout << first.operator->() << std::endl;
+//                    std::cout << "========" << std::endl;
+                    new(array + cnt_from_head_tmp--) T(*first);
+                }
+            }
 			return iterator(array + cnt_from_head);
 		}
 
 		/// ERASE
 
-//		iterator erase(const_iterator pos) {
-//			return erase(pos, pos + 1);
-//		}
+		iterator erase(const_iterator pos) {
+			return erase(pos, pos + 1);
+		}
 
 		iterator erase(const_iterator first, const_iterator last) {
 			typename const_iterator::difference_type n =
 					ft::distance(first, last);
 			size_t dist_to_first = first - begin();
 			size_t dist_to_last = last - begin();
+            size_t dist_to_first_tmp = dist_to_first;
 
-			if (dist_to_first + n + 1 > sz)
-				resize(dist_to_first);
+			if (dist_to_first + n + 1 > sz) {
+                resize(dist_to_first);
+            }
 			else {
 				for (size_t i = 0; i < static_cast<size_t>(sz - n); ++i)
-					new(array + dist_to_first++) T(*(array + dist_to_last++));
+					new(array + dist_to_first_tmp++) T(*(array + dist_to_last++));
 				sz -= n;
 			}
-			return iterator();
+			return iterator(array + dist_to_first);
 		}
 
+        void clear() {
+            for (; sz > 0; --sz)
+                (array + sz - 1)->~T();
+        }
 
         size_t capacity() const {
             return cap;
@@ -203,6 +286,20 @@ namespace ft {
         size_t size() const {
             return sz;
         }
+
+        bool empty() const {
+            return (sz == 0);
+        }
+
+        void swap(vector<T> &other) {
+            ft::swap(this->sz, other.sz);
+            ft::swap(this->cap, other.cap);
+            ft::swap(this->array, other.array);
+            //ft::swap(this->sz, other.sz);
+        }
+
+        //size_t max_size() {} ALLOCATOR
+
 
         void print_vector() {
             for (size_t i = 0; i < this->sz; ++i)

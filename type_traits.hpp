@@ -10,6 +10,21 @@ namespace ft {
         typedef U value;
     };
 
+    template<typename T, typename U>
+    struct is_same_m {
+        static const bool value = false;
+    };
+
+    template<typename T>
+    struct is_same_m<T, T> {
+        static const bool value = true;
+    };
+
+    template<typename T, typename U>
+    struct is_same {
+        static const bool value = is_same_m<T, U>::value;
+    };
+
     template<typename T>
     struct is_integral {
         static const bool value = false;
